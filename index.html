@@ -190,6 +190,22 @@ body::before {
 
 .round-pill.locked::after { content: ' 🔒'; font-size: 0.65rem; }
 
+.btn-reset {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid rgba(255,51,85,0.35);
+  background: transparent;
+  color: var(--red);
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+.btn-reset:hover { opacity: 1; background: rgba(255,51,85,0.1); }
+
 .game-content {
   flex: 1;
   display: flex;
@@ -560,6 +576,7 @@ body::before {
         <span class="score-round" id="hdr-round">Round 1</span>
       </div>
       <div class="round-pills" id="round-pills"></div>
+      <button class="btn-reset" id="btn-reset-game" title="Reset all progress">↺ Reset</button>
     </div>
     <div class="game-content">
       <div class="stock-title" id="stock-title"></div>
@@ -1234,6 +1251,14 @@ document.getElementById('btn-checkpoint-continue').addEventListener('click', () 
   if (state.rounds[state.currentRound].answers.length >= 10) {
     showRoundSummary();
   }
+});
+
+document.getElementById('btn-reset-game').addEventListener('click', () => {
+  if (!confirm('Reset all progress and start over?')) return;
+  resetState();
+  checkpointShownFor = {};
+  if (chart) { chart.remove(); chart = null; }
+  showScreen('start-screen');
 });
 </script>
 </body>
