@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bull or Bear</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --card: #111;
+  --border: #1a1a1a;
+  --text: #e8e8e8;
+  --muted: #888;
+  --green: #00ff88;
+  --red: #ff3355;
+  --gold: #ffd700;
+  --accent-border: rgba(255,255,255,0.08);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.015) 2px,
+    rgba(255,255,255,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ─── SCREENS ─────────────────────────────────────────────── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ─── START SCREEN ────────────────────────────────────────── */
+#start-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 32px;
+}
+
+.logo {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-shadow: 0 0 40px rgba(255,215,0,0.4);
+  line-height: 1;
+}
+
+.logo-sub {
+  font-size: 0.9rem;
+  color: var(--muted);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+.ticker-tape-wrapper {
+  width: 100%;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  border-top: 1px solid var(--accent-border);
+  border-bottom: 1px solid var(--accent-border);
+  padding: 10px 0;
+}
+
+.ticker-tape {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker 20s linear infinite;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ticker-tape span { padding: 0 32px; }
+.ticker-tape .up { color: var(--green); }
+.ticker-tape .down { color: var(--red); }
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.rules {
+  max-width: 480px;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--muted);
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  background: var(--card);
+}
+
+.rules strong { color: var(--text); }
+
+.btn-primary {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  padding: 16px 48px;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 24px rgba(255,215,0,0.3);
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 36px rgba(255,215,0,0.5);
+}
+
+/* ─── GAME SCREEN ─────────────────────────────────────────── */
+#game-screen { padding: 0; }
+
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--accent-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.score-display {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+}
+
+.score-correct { color: var(--green); }
+.score-wrong { color: var(--red); }
+.score-round { color: var(--muted); }
+
+.round-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.round-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  border: 1px solid var(--accent-border);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.round-pill.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(255,215,0,0.08);
+}
+
+.round-pill.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.round-pill.locked::after { content: ' 🔒'; font-size: 0.65rem; }
+
+.game-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.stock-title {
+  font-size: 1rem;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.stock-title strong { color: var(--text); font-size: 1.1rem; }
+
+.chart-card {
+  position: relative;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.chart-card.glow-pulse {
+  animation: glowPulse 0.8s ease-out;
+}
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 0px rgba(0,255,136,0); }
+  40% { box-shadow: 0 0 40px rgba(0,255,136,0.4); }
+  100% { box-shadow: 0 0 0px rgba(0,255,136,0); }
+}
+
+#chart-container { width: 100%; height: 320px; }
+
+/* Result overlay on chart */
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 12px;
+  gap: 8px;
+}
+
+.result-overlay.visible { opacity: 1; }
+
+.result-overlay.correct {
+  animation: correctFlash 0.5s ease-out;
+}
+
+.result-overlay.wrong {
+  animation: wrongFlash 0.5s ease-out;
+}
+
+@keyframes correctFlash {
+  0% { background: rgba(0,255,136,0); }
+  30% { background: rgba(0,255,136,0.25); }
+  100% { background: rgba(0,255,136,0.08); }
+}
+
+@keyframes wrongFlash {
+  0% { background: rgba(255,51,85,0); }
+  30% { background: rgba(255,51,85,0.25); }
+  100% { background: rgba(255,51,85,0.08); }
+}
+
+.result-icon {
+  font-size: 3rem;
+  line-height: 1;
+  opacity: 0;
+}
+
+.result-icon.slide-in {
+  animation: slideInFromTop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+.result-icon.slam-in {
+  animation: slamIn 0.4s cubic-bezier(0.36,0.07,0.19,0.97) forwards;
+}
+
+@keyframes slideInFromTop {
+  0% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes slamIn {
+  0% { transform: scale(1.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.result-label {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s 0.2s;
+}
+
+.result-label.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.result-pct {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s 0.4s;
+}
+
+.result-pct.visible { opacity: 1; }
+
+/* Shake animation on wrong */
+@keyframes screenShake {
+  0%,100% { transform: translateX(0); }
+  15% { transform: translateX(-8px); }
+  30% { transform: translateX(8px); }
+  45% { transform: translateX(-6px); }
+  60% { transform: translateX(6px); }
+  75% { transform: translateX(-3px); }
+  90% { transform: translateX(3px); }
+}
+
+#app.shake { animation: screenShake 0.5s ease-out; }
+
+.prediction-prompt {
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.vote-buttons {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.btn-vote {
+  flex: 1;
+  padding: 18px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+  border: 2px solid;
+  background: transparent;
+  color: var(--text);
+}
+
+.btn-up {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.btn-up:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 24px rgba(0,255,136,0.35);
+  background: rgba(0,255,136,0.08);
+}
+
+.btn-down {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.btn-down:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 24px rgba(255,51,85,0.35);
+  background: rgba(255,51,85,0.08);
+}
+
+.btn-vote:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-next {
+  padding: 12px 36px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border: 1px solid var(--accent-border);
+  background: var(--card);
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s, transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-next.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-next:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 16px rgba(255,255,255,0.1);
+}
+
+/* ─── CHECKPOINT SCREEN ───────────────────────────────────── */
+#checkpoint-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0,0,0,0.92);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+  padding: 40px;
+}
+
+#checkpoint-screen.active { display: flex; }
+
+#checkpoint-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.checkpoint-msg {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.5);
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── ROUND SUMMARY ───────────────────────────────────────── */
+#summary-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 28px;
+  text-align: center;
+}
+
+.summary-headline {
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.summary-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.result-tile {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  gap: 4px;
+  border: 1px solid var(--accent-border);
+}
+
+.result-tile.correct-tile {
+  background: rgba(0,255,136,0.12);
+  border-color: rgba(0,255,136,0.3);
+  color: var(--green);
+}
+
+.result-tile.wrong-tile {
+  background: rgba(255,51,85,0.1);
+  border-color: rgba(255,51,85,0.25);
+  color: var(--red);
+}
+
+.result-tile .tile-icon { font-size: 1.1rem; }
+
+.summary-buttons { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+
+.btn-secondary {
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid var(--accent-border);
+  background: var(--card);
+  color: var(--text);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-secondary:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 16px rgba(255,255,255,0.1);
+}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .vote-buttons { flex-direction: column; }
+  .results-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Start Screen -->
+  <div id="start-screen" class="screen active">
+    <div>
+      <div class="logo">BULL OR BEAR</div>
+      <div class="logo-sub">Stock Prediction Challenge</div>
+    </div>
+    <div class="ticker-tape-wrapper">
+      <div class="ticker-tape" id="ticker-tape"></div>
+    </div>
+    <div class="rules">
+      <strong>How to play:</strong><br>
+      You'll see a stock's chart for one year.<br>
+      Predict whether it went <span style="color:var(--green)">UP</span> or <span style="color:var(--red)">DOWN</span> the following year.<br>
+      5 rounds · 10 stocks each · Score as many as you can.
+    </div>
+    <button class="btn-primary" id="btn-start">START GAME</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <div class="header-bar">
+      <div class="score-display">
+        <span class="score-correct" id="hdr-correct">✓ 0 correct</span>
+        <span class="score-wrong" id="hdr-wrong">✗ 0 wrong</span>
+        <span class="score-round" id="hdr-round">Round 1</span>
+      </div>
+      <div class="round-pills" id="round-pills"></div>
+    </div>
+    <div class="game-content">
+      <div class="stock-title" id="stock-title"></div>
+      <div class="chart-card" id="chart-card">
+        <div id="chart-container"></div>
+        <div class="result-overlay" id="result-overlay">
+          <div class="result-icon" id="result-icon"></div>
+          <div class="result-label" id="result-label"></div>
+          <div class="result-pct" id="result-pct"></div>
+        </div>
+      </div>
+      <div class="prediction-prompt">What happened next year?</div>
+      <div class="vote-buttons">
+        <button class="btn-vote btn-up" id="btn-up">▲ BULL</button>
+        <button class="btn-vote btn-down" id="btn-down">▼ BEAR</button>
+      </div>
+      <button class="btn-next" id="btn-next">Next →</button>
+    </div>
+  </div>
+
+  <!-- Summary Screen -->
+  <div id="summary-screen" class="screen">
+    <div class="summary-headline" id="summary-headline"></div>
+    <div class="summary-sub" id="summary-sub"></div>
+    <div class="results-grid" id="results-grid"></div>
+    <div class="summary-buttons" id="summary-buttons"></div>
+  </div>
+</div>
+
+<!-- Checkpoint Screen (fixed overlay) -->
+<div id="checkpoint-screen">
+  <canvas id="checkpoint-canvas"></canvas>
+  <div class="checkpoint-msg" id="checkpoint-msg"></div>
+  <button class="btn-primary" id="btn-checkpoint-continue">Continue</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SEEDED RANDOM
+// ═══════════════════════════════════════════════════════════
+function makeRng(seed) {
+  let s = 0;
+  for (let i = 0; i < seed.length; i++) s = (s * 31 + seed.charCodeAt(i)) >>> 0;
+  return function() {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function randn(rng) {
+  // Box-Muller
+  let u = 0, v = 0;
+  while (u === 0) u = rng();
+  while (v === 0) v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  OHLC GENERATION
+// ═══════════════════════════════════════════════════════════
+// Returns YYYY-MM-DD string for Jan 1 of year + weekIndex*7 days
+function weekDate(year, weekIndex) {
+  const d = new Date(Date.UTC(year, 0, 1 + weekIndex * 7));
+  return d.toISOString().slice(0, 10);
+}
+
+function generateCandles(ticker, startYear, startPrice, targetChangePct) {
+  const rng = makeRng(ticker + startYear);
+  const baseCandles = [];
+  const predCandles = [];
+
+  // Base period: 2 years of weekly candles (104 weeks)
+  // Year (startYear-1) has 52 weeks, year startYear has 52 weeks
+  let price = startPrice;
+  let baseOpen = price;
+  for (let w = 0; w < 104; w++) {
+    // Weekly noise: ~1.8% σ, clamped to ±5%
+    const noise = Math.max(-0.05, Math.min(0.05, randn(rng) * 0.018));
+    const close = price * (1 + noise);
+    const open = baseOpen;
+    const high = Math.max(open, close) * (1 + rng() * 0.008);
+    const low  = Math.min(open, close) * (1 - rng() * 0.008);
+    // Week 0-51 belong to startYear-1, week 52-103 belong to startYear
+    const yr = w < 52 ? startYear - 1 : startYear;
+    const wi = w < 52 ? w : w - 52;
+    baseCandles.push({
+      time: weekDate(yr, wi),
+      open: +open.toFixed(2), high: +high.toFixed(2),
+      low: +low.toFixed(2), close: +close.toFixed(2)
+    });
+    baseOpen = close * (1 + (rng() - 0.5) * 0.004);
+    price = close;
+  }
+
+  // Prediction year: 52 weekly candles drifting toward target
+  const baseEndPrice = baseCandles[baseCandles.length - 1].close;
+  const targetPrice = startPrice * (1 + targetChangePct / 100);
+  const weeklyDrift = Math.pow(targetPrice / baseEndPrice, 1 / 52) - 1;
+  let pPrice = baseEndPrice;
+  let pOpen = baseEndPrice;
+  for (let w = 0; w < 52; w++) {
+    const noise = Math.max(-0.04, Math.min(0.04, randn(rng) * 0.016));
+    const close = pPrice * (1 + weeklyDrift + noise);
+    const open = pOpen;
+    const high = Math.max(open, close) * (1 + rng() * 0.008);
+    const low  = Math.min(open, close) * (1 - rng() * 0.008);
+    predCandles.push({
+      time: weekDate(startYear + 1, w),
+      open: +open.toFixed(2), high: +high.toFixed(2),
+      low: +low.toFixed(2), close: +close.toFixed(2)
+    });
+    pOpen = close * (1 + (rng() - 0.5) * 0.004);
+    pPrice = close;
+  }
+
+  return { baseCandles, predCandles };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ROUND DATA
+// ═══════════════════════════════════════════════════════════
+const RAW_ROUNDS = [
+  // Round 1
+  [
+    { ticker:'TSLA', name:'Tesla',     baseYear:2021, direction:'DOWN', change:-65,  startPrice:900  },
+    { ticker:'AAPL', name:'Apple',     baseYear:2020, direction:'UP',   change:34,   startPrice:75   },
+    { ticker:'AMZN', name:'Amazon',    baseYear:2021, direction:'DOWN', change:-50,  startPrice:3300 },
+    { ticker:'NVDA', name:'Nvidia',    baseYear:2022, direction:'UP',   change:239,  startPrice:150  },
+    { ticker:'NFLX', name:'Netflix',   baseYear:2021, direction:'DOWN', change:-51,  startPrice:540  },
+    { ticker:'MSFT', name:'Microsoft', baseYear:2020, direction:'UP',   change:53,   startPrice:160  },
+    { ticker:'META', name:'Meta',      baseYear:2021, direction:'DOWN', change:-64,  startPrice:340  },
+    { ticker:'GOOG', name:'Google',    baseYear:2020, direction:'UP',   change:65,   startPrice:1430 },
+    { ticker:'ZM',   name:'Zoom',      baseYear:2020, direction:'DOWN', change:-45,  startPrice:68   },
+    { ticker:'SHOP', name:'Shopify',   baseYear:2021, direction:'DOWN', change:-73,  startPrice:1400 },
+  ],
+  // Round 2
+  [
+    { ticker:'UBER', name:'Uber',      baseYear:2022, direction:'UP',   change:148,  startPrice:25   },
+    { ticker:'DIS',  name:'Disney',    baseYear:2020, direction:'UP',   change:25,   startPrice:115  },
+    { ticker:'ABNB', name:'Airbnb',    baseYear:2022, direction:'UP',   change:42,   startPrice:85   },
+    { ticker:'COIN', name:'Coinbase',  baseYear:2021, direction:'DOWN', change:-86,  startPrice:340  },
+    { ticker:'PLTR', name:'Palantir',  baseYear:2020, direction:'UP',   change:271,  startPrice:10   },
+    { ticker:'RIVN', name:'Rivian',    baseYear:2021, direction:'DOWN', change:-82,  startPrice:100  },
+    { ticker:'SNAP', name:'Snapchat',  baseYear:2020, direction:'UP',   change:192,  startPrice:17   },
+    { ticker:'TWTR', name:'Twitter',   baseYear:2020, direction:'UP',   change:72,   startPrice:29   },
+    { ticker:'PTON', name:'Peloton',   baseYear:2020, direction:'DOWN', change:-76,  startPrice:27   },
+    { ticker:'HOOD', name:'Robinhood', baseYear:2021, direction:'DOWN', change:-55,  startPrice:35   },
+  ],
+  // Round 3
+  [
+    { ticker:'BRK',  name:'Berkshire Hathaway', baseYear:2021, direction:'UP',   change:4,   startPrice:460000 },
+    { ticker:'JPM',  name:'JPMorgan',    baseYear:2020, direction:'UP',   change:25,   startPrice:100  },
+    { ticker:'GS',   name:'Goldman Sachs', baseYear:2020, direction:'UP', change:45,   startPrice:210  },
+    { ticker:'V',    name:'Visa',         baseYear:2021, direction:'DOWN', change:-3,  startPrice:220  },
+    { ticker:'MA',   name:'Mastercard',   baseYear:2021, direction:'DOWN', change:-4,  startPrice:360  },
+    { ticker:'PYPL', name:'PayPal',       baseYear:2021, direction:'DOWN', change:-62, startPrice:275  },
+    { ticker:'SQ',   name:'Block (SQ)',   baseYear:2020, direction:'DOWN', change:-15, startPrice:220  },
+    { ticker:'COIN2',name:'Coinbase',     baseYear:2022, direction:'UP',   change:54,  startPrice:50   },
+    { ticker:'AFRM', name:'Affirm',       baseYear:2021, direction:'DOWN', change:-89, startPrice:145  },
+    { ticker:'SOFI', name:'SoFi',         baseYear:2021, direction:'DOWN', change:-73, startPrice:17   },
+  ],
+  // Round 4
+  [
+    { ticker:'MRNA', name:'Moderna',          baseYear:2021, direction:'DOWN', change:-29, startPrice:270  },
+    { ticker:'PFE',  name:'Pfizer',           baseYear:2020, direction:'UP',   change:51,  startPrice:34   },
+    { ticker:'JNJ',  name:'Johnson & Johnson',baseYear:2021, direction:'UP',   change:5,   startPrice:165  },
+    { ticker:'UNH',  name:'UnitedHealth',     baseYear:2020, direction:'UP',   change:22,  startPrice:310  },
+    { ticker:'CVS',  name:'CVS Health',       baseYear:2020, direction:'UP',   change:38,  startPrice:60   },
+    { ticker:'WBA',  name:'Walgreens',        baseYear:2020, direction:'DOWN', change:-8,  startPrice:43   },
+    { ticker:'TDOC', name:'Teladoc',          baseYear:2020, direction:'DOWN', change:-54, startPrice:85   },
+    { ticker:'ILMN', name:'Illumina',         baseYear:2021, direction:'DOWN', change:-52, startPrice:380  },
+    { ticker:'ABT',  name:'Abbott Labs',      baseYear:2020, direction:'UP',   change:25,  startPrice:86   },
+    { ticker:'ISRG', name:'Intuitive Surgical',baseYear:2020, direction:'UP',  change:34,  startPrice:550  },
+  ],
+  // Round 5
+  [
+    { ticker:'XOM',  name:'ExxonMobil',      baseYear:2021, direction:'UP',   change:87,  startPrice:50   },
+    { ticker:'CVX',  name:'Chevron',         baseYear:2021, direction:'UP',   change:53,  startPrice:90   },
+    { ticker:'BP',   name:'BP',              baseYear:2020, direction:'UP',   change:16,  startPrice:24   },
+    { ticker:'SHEL', name:'Shell',           baseYear:2020, direction:'UP',   change:11,  startPrice:28   },
+    { ticker:'HAL',  name:'Halliburton',     baseYear:2021, direction:'UP',   change:61,  startPrice:18   },
+    { ticker:'TSLA2',name:'Tesla',           baseYear:2019, direction:'UP',   change:743, startPrice:65   },
+    { ticker:'GME',  name:'GameStop',        baseYear:2020, direction:'UP',   change:688, startPrice:4    },
+    { ticker:'AMC',  name:'AMC',             baseYear:2020, direction:'UP',   change:596, startPrice:2    },
+    { ticker:'LCID', name:'Lucid Motors',    baseYear:2021, direction:'DOWN', change:-82, startPrice:35   },
+    { ticker:'SPCE', name:'Virgin Galactic', baseYear:2020, direction:'DOWN', change:-46, startPrice:20   },
+  ],
+];
+
+// Pre-generate candles for all stocks
+const ROUNDS = RAW_ROUNDS.map(round =>
+  round.map(stock => {
+    const { baseCandles, predCandles } = generateCandles(
+      stock.ticker, stock.baseYear, stock.startPrice, stock.change
+    );
+    return { ...stock, baseCandles, predCandles };
+  })
+);
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+const STATE_KEY = 'bullOrBearState';
+
+function freshState() {
+  return {
+    currentRound: 0,
+    currentStock: 0,
+    rounds: RAW_ROUNDS.map(() => ({ correct: 0, wrong: 0, answers: [] })),
+    unlockedRounds: [0],
+  };
+}
+
+let state = freshState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.currentRound === 'number') {
+        state = parsed;
+      }
+    }
+  } catch(e) { /* corrupt — use fresh */ }
+}
+
+function saveState() {
+  localStorage.setItem(STATE_KEY, JSON.stringify(state));
+}
+
+function resetState() {
+  localStorage.removeItem(STATE_KEY);
+  state = freshState();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHART
+// ═══════════════════════════════════════════════════════════
+let chart = null;
+let candleSeries = null;
+
+function initChart() {
+  const container = document.getElementById('chart-container');
+  if (chart) { chart.remove(); chart = null; }
+
+  chart = LightweightCharts.createChart(container, {
+    width: container.clientWidth,
+    height: 320,
+    layout: {
+      background: { color: '#0a0a0a' },
+      textColor: '#d1d4dc',
+    },
+    grid: {
+      vertLines: { color: 'rgba(255,255,255,0.06)' },
+      horzLines: { color: 'rgba(255,255,255,0.06)' },
+    },
+    rightPriceScale: { borderColor: 'rgba(255,255,255,0.1)' },
+    timeScale: {
+      borderColor: 'rgba(255,255,255,0.1)',
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    handleScroll: false,
+    handleScale: false,
+  });
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor: '#00ff88',
+    downColor: '#ff3355',
+    borderUpColor: '#00ff88',
+    borderDownColor: '#ff3355',
+    wickUpColor: '#00ff88',
+    wickDownColor: '#ff3355',
+  });
+
+  window.addEventListener('resize', () => {
+    if (chart) chart.applyOptions({ width: container.clientWidth });
+  });
+}
+
+function loadBaseCandles(stock) {
+  candleSeries.setData(stock.baseCandles);
+  chart.timeScale().fitContent();
+}
+
+function streamPredCandles(stock, onDone) {
+  let i = 0;
+  const candles = stock.predCandles;
+  const interval = setInterval(() => {
+    candleSeries.update(candles[i]);
+    i++;
+    if (i >= candles.length) {
+      clearInterval(interval);
+      chart.timeScale().fitContent();
+      onDone();
+    }
+  }, 40);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function updateHeader() {
+  const r = state.rounds[state.currentRound];
+  const totalCorrect = state.rounds.reduce((a, x) => a + x.correct, 0);
+  const totalWrong   = state.rounds.reduce((a, x) => a + x.wrong, 0);
+  document.getElementById('hdr-correct').textContent = `✓ ${totalCorrect} correct`;
+  document.getElementById('hdr-wrong').textContent   = `✗ ${totalWrong} wrong`;
+  document.getElementById('hdr-round').textContent   = `Round ${state.currentRound + 1}`;
+
+  const pills = document.getElementById('round-pills');
+  pills.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const pill = document.createElement('button');
+    pill.className = 'round-pill';
+    pill.textContent = `R${i+1}`;
+    const unlocked = state.unlockedRounds.includes(i);
+    if (!unlocked) pill.classList.add('locked');
+    if (i === state.currentRound) pill.classList.add('active');
+    if (unlocked) {
+      pill.addEventListener('click', () => {
+        if (i !== state.currentRound) {
+          state.currentRound = i;
+          state.currentStock = state.rounds[i].answers.length;
+          saveState();
+          loadCurrentStock();
+        }
+      });
+    }
+    pills.appendChild(pill);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAME FLOW
+// ═══════════════════════════════════════════════════════════
+function loadCurrentStock() {
+  showScreen('game-screen');
+  updateHeader();
+
+  const stock = ROUNDS[state.currentRound][state.currentStock];
+  document.getElementById('stock-title').innerHTML =
+    `<strong>${stock.name} (${stock.ticker.replace(/\d+$/,'')})</strong> &mdash; ${stock.baseYear - 1}–${stock.baseYear} Performance`;
+
+  // Reset result overlay
+  const overlay = document.getElementById('result-overlay');
+  overlay.className = 'result-overlay';
+  document.getElementById('result-icon').className = 'result-icon';
+  document.getElementById('result-icon').textContent = '';
+  document.getElementById('result-label').className = 'result-label';
+  document.getElementById('result-label').textContent = '';
+  document.getElementById('result-pct').className = 'result-pct';
+  document.getElementById('result-pct').textContent = '';
+
+  // Reset chart card
+  document.getElementById('chart-card').classList.remove('glow-pulse');
+  document.getElementById('app').classList.remove('shake');
+
+  // Enable buttons
+  const btnUp = document.getElementById('btn-up');
+  const btnDown = document.getElementById('btn-down');
+  btnUp.disabled = false;
+  btnDown.disabled = false;
+
+  // Hide next button
+  const btnNext = document.getElementById('btn-next');
+  btnNext.classList.remove('visible');
+
+  initChart();
+  loadBaseCandles(stock);
+}
+
+function handleGuess(guess) {
+  const stock = ROUNDS[state.currentRound][state.currentStock];
+  const isCorrect = guess === stock.direction;
+
+  // Disable buttons immediately
+  document.getElementById('btn-up').disabled = true;
+  document.getElementById('btn-down').disabled = true;
+
+  // Update state
+  if (isCorrect) {
+    state.rounds[state.currentRound].correct++;
+  } else {
+    state.rounds[state.currentRound].wrong++;
+  }
+  state.rounds[state.currentRound].answers.push({ guess, correct: isCorrect });
+  saveState();
+
+  // Show result overlay
+  const overlay = document.getElementById('result-overlay');
+  const icon    = document.getElementById('result-icon');
+  const label   = document.getElementById('result-label');
+  const pct     = document.getElementById('result-pct');
+
+  overlay.classList.add('visible', isCorrect ? 'correct' : 'wrong');
+
+  if (isCorrect) {
+    icon.textContent = '✓';
+    icon.style.color = 'var(--green)';
+    label.style.color = 'var(--green)';
+    label.textContent = 'CORRECT!';
+    setTimeout(() => icon.classList.add('slide-in'), 50);
+  } else {
+    icon.textContent = '✗';
+    icon.style.color = 'var(--red)';
+    label.style.color = 'var(--red)';
+    label.textContent = 'WRONG';
+    document.getElementById('app').classList.add('shake');
+    setTimeout(() => icon.classList.add('slam-in'), 50);
+  }
+
+  setTimeout(() => label.classList.add('visible'), 200);
+  setTimeout(() => pct.classList.add('visible'), 400);
+
+  // After 600ms, stream prediction candles
+  setTimeout(() => {
+    // Animate % counter
+    animatePct(stock.change, pct);
+
+    streamPredCandles(stock, () => {
+      // Glow pulse
+      document.getElementById('chart-card').classList.add('glow-pulse');
+      // Show next button after 2s
+      setTimeout(() => {
+        document.getElementById('btn-next').classList.add('visible');
+        checkCheckpoint();
+      }, 2000);
+    });
+  }, 600);
+}
+
+function animatePct(changePct, el) {
+  const sign = changePct >= 0 ? '+' : '';
+  const start = performance.now();
+  const duration = 1200;
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const cur = changePct * ease;
+    el.textContent = `${sign}${cur.toFixed(1)}%`;
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = `${sign}${changePct}%`;
+  }
+  requestAnimationFrame(step);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHECKPOINTS
+// ═══════════════════════════════════════════════════════════
+let checkpointShownFor = {};
+
+function checkCheckpoint() {
+  const r = state.currentRound;
+  const correct = state.rounds[r].correct;
+  const key = `${r}-${correct}`;
+  if (checkpointShownFor[key]) return;
+
+  let msg = null;
+  if (correct === 3) msg = '🔥 3 Correct! You\'re reading the market.';
+  else if (correct === 5) msg = '🏆 5 Correct! You\'re on a streak!';
+  else if (correct === 10) msg = '🎯 Round Complete! Next Round Unlocked!';
+
+  if (msg) {
+    checkpointShownFor[key] = true;
+    showCheckpoint(msg);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONFETTI
+// ═══════════════════════════════════════════════════════════
+let confettiRaf = null;
+
+function launchConfetti() {
+  const canvas = document.getElementById('checkpoint-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#ffd700','#00ff88','#ff3355','#ffffff','#00cfff'];
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: -10,
+      vx: (Math.random() - 0.5) * 4,
+      vy: Math.random() * 3 + 2,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.2,
+    });
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.1;
+      p.alpha -= 0.008;
+      p.rotation += p.rotationSpeed;
+      if (p.alpha > 0) {
+        alive = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        ctx.restore();
+      }
+    }
+    if (alive) confettiRaf = requestAnimationFrame(tick);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  confettiRaf = requestAnimationFrame(tick);
+}
+
+function showCheckpoint(msg) {
+  document.getElementById('checkpoint-msg').textContent = msg;
+  document.getElementById('checkpoint-screen').classList.add('active');
+  launchConfetti();
+}
+
+function hideCheckpoint() {
+  document.getElementById('checkpoint-screen').classList.remove('active');
+  if (confettiRaf) { cancelAnimationFrame(confettiRaf); confettiRaf = null; }
+  const canvas = document.getElementById('checkpoint-canvas');
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NEXT STOCK / ROUND SUMMARY
+// ═══════════════════════════════════════════════════════════
+function advanceStock() {
+  const roundAnswers = state.rounds[state.currentRound].answers.length;
+
+  if (roundAnswers >= 10) {
+    // End of round
+    showRoundSummary();
+    return;
+  }
+
+  state.currentStock = roundAnswers;
+  saveState();
+  loadCurrentStock();
+}
+
+function showRoundSummary() {
+  showScreen('summary-screen');
+  const r = state.currentRound;
+  const rd = state.rounds[r];
+  const correct = rd.correct;
+
+  document.getElementById('summary-headline').textContent = `${correct} / 10 Correct`;
+  document.getElementById('summary-sub').textContent =
+    `Round ${r+1} complete — ${correct >= 7 ? 'Great job!' : correct >= 5 ? 'Not bad!' : 'Keep practicing!'}`;
+
+  // Result tiles
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+  const roundStocks = ROUNDS[r];
+  rd.answers.forEach((ans, i) => {
+    const tile = document.createElement('div');
+    tile.className = `result-tile ${ans.correct ? 'correct-tile' : 'wrong-tile'}`;
+    const ticker = roundStocks[i].ticker.replace(/\d+$/, '');
+    tile.innerHTML = `<span class="tile-icon">${ans.correct ? '✓' : '✗'}</span><span>${ticker}</span>`;
+    grid.appendChild(tile);
+  });
+
+  // Buttons
+  const btns = document.getElementById('summary-buttons');
+  btns.innerHTML = '';
+
+  if (r < 4) {
+    // Unlock next round
+    const nextRound = r + 1;
+    if (!state.unlockedRounds.includes(nextRound)) {
+      state.unlockedRounds.push(nextRound);
+      saveState();
+    }
+
+    const btnNext = document.createElement('button');
+    btnNext.className = 'btn-primary';
+    btnNext.textContent = `Next Round →`;
+    btnNext.addEventListener('click', () => {
+      state.currentRound = nextRound;
+      state.currentStock = state.rounds[nextRound].answers.length;
+      checkpointShownFor = {};
+      saveState();
+      loadCurrentStock();
+    });
+    btns.appendChild(btnNext);
+  } else {
+    // Last round
+    const totalCorrect = state.rounds.reduce((a, x) => a + x.correct, 0);
+    document.getElementById('summary-headline').textContent = `Game Complete! ${totalCorrect} / 50`;
+    document.getElementById('summary-sub').textContent =
+      totalCorrect >= 40 ? 'Outstanding! Market wizard material.' :
+      totalCorrect >= 30 ? 'Solid performance!' : 'Better luck next time!';
+  }
+
+  const btnAgain = document.createElement('button');
+  btnAgain.className = 'btn-secondary';
+  btnAgain.textContent = 'Play Again';
+  btnAgain.addEventListener('click', () => {
+    resetState();
+    checkpointShownFor = {};
+    showScreen('start-screen');
+  });
+  btns.appendChild(btnAgain);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TICKER TAPE
+// ═══════════════════════════════════════════════════════════
+function buildTickerTape() {
+  const items = [
+    {t:'TSLA', v:'+743%', up:true},{t:'GME', v:'+688%', up:true},
+    {t:'NVDA', v:'+239%', up:true},{t:'PLTR', v:'+271%', up:true},
+    {t:'COIN', v:'-86%', up:false},{t:'PTON', v:'-76%', up:false},
+    {t:'SHOP', v:'-73%', up:false},{t:'AAPL', v:'+34%', up:true},
+    {t:'META', v:'-64%', up:false},{t:'UBER', v:'+148%', up:true},
+    {t:'SNAP', v:'+192%', up:true},{t:'NFLX', v:'-51%', up:false},
+    {t:'MSFT', v:'+53%', up:true}, {t:'RIVN', v:'-82%', up:false},
+    {t:'XOM',  v:'+87%', up:true}, {t:'AMZN', v:'-50%', up:false},
+  ];
+  const tape = document.getElementById('ticker-tape');
+  // Duplicate for seamless loop
+  const render = () => items.map(i =>
+    `<span class="${i.up ? 'up' : 'down'}">${i.t} ${i.v}</span>`
+  ).join('');
+  tape.innerHTML = render() + render();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+loadState();
+buildTickerTape();
+
+document.getElementById('btn-start').addEventListener('click', () => {
+  // Resume or fresh
+  const r = state.currentRound;
+  const s = state.rounds[r].answers.length;
+  state.currentStock = s;
+  checkpointShownFor = {};
+  loadCurrentStock();
+});
+
+document.getElementById('btn-up').addEventListener('click', () => handleGuess('UP'));
+document.getElementById('btn-down').addEventListener('click', () => handleGuess('DOWN'));
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  // Dismiss checkpoint if open (shouldn't be but just in case)
+  advanceStock();
+});
+
+document.getElementById('btn-checkpoint-continue').addEventListener('click', () => {
+  hideCheckpoint();
+  // If all 10 answered, go to summary
+  if (state.rounds[state.currentRound].answers.length >= 10) {
+    showRoundSummary();
+  }
+});
+</script>
+</body>
+</html>
