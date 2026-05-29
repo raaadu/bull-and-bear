@@ -206,6 +206,40 @@ body::before {
 }
 .btn-reset:hover { opacity: 1; background: rgba(255,51,85,0.1); }
 
+.news-panel {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.news-panel-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.news-bullet {
+  display: flex;
+  gap: 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.news-bullet::before {
+  content: '▸';
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .game-content {
   flex: 1;
   display: flex;
@@ -588,6 +622,7 @@ body::before {
           <div class="result-pct" id="result-pct"></div>
         </div>
       </div>
+      <div class="news-panel" id="news-panel"></div>
       <div class="prediction-prompt">What happened next year?</div>
       <div class="vote-buttons">
         <button class="btn-vote btn-up" id="btn-up">▲ BULL</button>
@@ -701,68 +736,118 @@ function generateCandles(ticker, startYear, startPrice, targetChangePct) {
 const RAW_ROUNDS = [
   // Round 1
   [
-    { ticker:'TSLA', name:'Tesla',     baseYear:2021, direction:'DOWN', change:-65,  startPrice:900  },
-    { ticker:'AAPL', name:'Apple',     baseYear:2020, direction:'UP',   change:34,   startPrice:75   },
-    { ticker:'AMZN', name:'Amazon',    baseYear:2021, direction:'DOWN', change:-50,  startPrice:3300 },
-    { ticker:'NVDA', name:'Nvidia',    baseYear:2022, direction:'UP',   change:239,  startPrice:150  },
-    { ticker:'NFLX', name:'Netflix',   baseYear:2021, direction:'DOWN', change:-51,  startPrice:540  },
-    { ticker:'MSFT', name:'Microsoft', baseYear:2020, direction:'UP',   change:53,   startPrice:160  },
-    { ticker:'META', name:'Meta',      baseYear:2021, direction:'DOWN', change:-64,  startPrice:340  },
-    { ticker:'GOOG', name:'Google',    baseYear:2020, direction:'UP',   change:65,   startPrice:1430 },
-    { ticker:'ZM',   name:'Zoom',      baseYear:2020, direction:'DOWN', change:-45,  startPrice:68   },
-    { ticker:'SHOP', name:'Shopify',   baseYear:2021, direction:'DOWN', change:-73,  startPrice:1400 },
+    { ticker:'TSLA', name:'Tesla',     baseYear:2021, direction:'DOWN', change:-65,  startPrice:900,
+      news:["CEO heavily distracted by Twitter acquisition bid amid shareholder criticism","China COVID lockdowns threatening Shanghai Gigafactory output and deliveries","Fed signaling aggressive rate hikes in 2022, pressuring high-multiple growth stocks"] },
+    { ticker:'AAPL', name:'Apple',     baseYear:2020, direction:'UP',   change:34,   startPrice:75,
+      news:["iPhone 12 launched with 5G support, first major upgrade cycle in years","Services revenue growing double-digits: App Store, Apple TV+, Apple Pay all accelerating","Work-from-home driving record Mac and iPad sales across consumer and enterprise"] },
+    { ticker:'AMZN', name:'Amazon',    baseYear:2021, direction:'DOWN', change:-50,  startPrice:3300,
+      news:["Company hired 800,000 workers in 2021 to meet pandemic e-commerce demand","E-commerce growth rates decelerating as consumers return to physical retail stores","Rising inflation and fuel costs squeezing AWS and logistics division margins"] },
+    { ticker:'NVDA', name:'Nvidia',    baseYear:2022, direction:'UP',   change:239,  startPrice:150,
+      news:["ChatGPT launched November 2022, sparking massive enterprise AI adoption wave","H100 data center GPUs entering full production with unprecedented demand from cloud providers","Every major tech company publicly announcing large-scale AI infrastructure buildout plans"] },
+    { ticker:'NFLX', name:'Netflix',   baseYear:2021, direction:'DOWN', change:-51,  startPrice:540,
+      news:["Subscriber growth decelerated significantly despite Squid Game global phenomenon","Company announcing plans to crack down on widespread password sharing across accounts","Disney+, HBO Max, and Peacock all spending billions to compete directly with Netflix"] },
+    { ticker:'MSFT', name:'Microsoft', baseYear:2020, direction:'UP',   change:53,   startPrice:160,
+      news:["Teams video conferencing adoption surged with enterprise remote work mandates","Azure cloud revenue growing 50% year-over-year driven by digital transformation","Microsoft 365 subscription model providing highly predictable recurring revenue base"] },
+    { ticker:'META', name:'Meta',      baseYear:2021, direction:'DOWN', change:-64,  startPrice:340,
+      news:["Apple iOS 14 privacy changes severely limiting ad targeting across Facebook and Instagram","Reality Labs metaverse division burning $10B per year with no clear revenue path","Instagram Reels growth cannibalizing higher-margin feed and Stories advertising inventory"] },
+    { ticker:'GOOG', name:'Google',    baseYear:2020, direction:'UP',   change:65,   startPrice:1430,
+      news:["Digital advertising market rebounding strongly as COVID vaccines enabled retail recovery","YouTube monetization growing with Shorts and connected-TV ad formats gaining traction","Google Cloud Platform accelerating enterprise wins against AWS, now growing over 45% annually"] },
+    { ticker:'ZM',   name:'Zoom',      baseYear:2020, direction:'DOWN', change:-45,  startPrice:68,
+      news:["Video conferencing usage hit all-time highs as pandemic forced global remote work","COVID vaccine rollout accelerating with return-to-office expected across most companies","Microsoft Teams and Google Meet aggressively bundled into existing enterprise contracts"] },
+    { ticker:'SHOP', name:'Shopify',   baseYear:2021, direction:'DOWN', change:-73,  startPrice:1400,
+      news:["Post-pandemic e-commerce growth rates normalizing toward pre-COVID baseline trends","Federal Reserve signaling sharp interest rate increases, compressing high-growth valuations","Merchant conversion rates declining as consumer spending shifts back to physical retail"] },
   ],
   // Round 2
   [
-    { ticker:'UBER', name:'Uber',      baseYear:2022, direction:'UP',   change:148,  startPrice:25   },
-    { ticker:'DIS',  name:'Disney',    baseYear:2020, direction:'UP',   change:25,   startPrice:115  },
-    { ticker:'ABNB', name:'Airbnb',    baseYear:2022, direction:'UP',   change:42,   startPrice:85   },
-    { ticker:'COIN', name:'Coinbase',  baseYear:2021, direction:'DOWN', change:-86,  startPrice:340  },
-    { ticker:'PLTR', name:'Palantir',  baseYear:2020, direction:'UP',   change:271,  startPrice:10   },
-    { ticker:'RIVN', name:'Rivian',    baseYear:2021, direction:'DOWN', change:-82,  startPrice:100  },
-    { ticker:'SNAP', name:'Snapchat',  baseYear:2020, direction:'UP',   change:192,  startPrice:17   },
-    { ticker:'TWTR', name:'Twitter',   baseYear:2020, direction:'UP',   change:72,   startPrice:29   },
-    { ticker:'PTON', name:'Peloton',   baseYear:2020, direction:'DOWN', change:-76,  startPrice:27   },
-    { ticker:'HOOD', name:'Robinhood', baseYear:2021, direction:'DOWN', change:-55,  startPrice:35   },
+    { ticker:'UBER', name:'Uber',      baseYear:2022, direction:'UP',   change:148,  startPrice:25,
+      news:["First full year of profitability within reach as ride-share pricing power strengthens","Driver supply constraints easing, reducing incentive costs and improving unit economics","Uber Eats delivery margins expanding as the division reaches sustainable operational scale"] },
+    { ticker:'DIS',  name:'Disney',    baseYear:2020, direction:'UP',   change:25,   startPrice:115,
+      news:["Disney+ surpassed 100 million subscribers far faster than Wall Street expected","Theme parks preparing to reopen as vaccination rates climb across the United States","Streaming subscriber growth helping offset losses from shuttered theatrical film releases"] },
+    { ticker:'ABNB', name:'Airbnb',    baseYear:2022, direction:'UP',   change:42,   startPrice:85,
+      news:["Travel demand remained resilient despite widespread recession warnings throughout 2022","Company achieved profitability milestone, demonstrating durable unit economics at scale","Host supply and pricing power sustained as traveler demand consistently exceeded capacity"] },
+    { ticker:'COIN', name:'Coinbase',  baseYear:2021, direction:'DOWN', change:-86,  startPrice:340,
+      news:["Cryptocurrency valuations at all-time highs with Bitcoin approaching $69,000 per coin","Federal Reserve signaling aggressive interest rate tightening cycle beginning in early 2022","SEC scrutiny of crypto exchanges and token classifications increasing regulatory uncertainty"] },
+    { ticker:'PLTR', name:'Palantir',  baseYear:2020, direction:'UP',   change:271,  startPrice:10,
+      news:["Direct IPO completed in September 2020 with institutional investor acceptance secured","US Army and CIA multi-year contracts expanded, validating government data analytics platform","Pandemic accelerated government demand for real-time data integration and intelligence tools"] },
+    { ticker:'RIVN', name:'Rivian',    baseYear:2021, direction:'DOWN', change:-82,  startPrice:100,
+      news:["IPO valued Rivian at over $100 billion despite zero vehicles sold and no revenue","2022 production targets of 150,000 vehicles far exceeded manufacturing capabilities","Significant cash burn rate requiring ongoing capital raises amid rising interest rates"] },
+    { ticker:'SNAP', name:'Snapchat',  baseYear:2020, direction:'UP',   change:192,  startPrice:17,
+      news:["Daily active users surging among Gen Z demographics with strong engagement metrics","AR lens advertising platform gaining traction with brand advertisers seeking younger audiences","Snapchat maintaining independence and growing despite fierce competition from TikTok and Instagram"] },
+    { ticker:'TWTR', name:'Twitter',   baseYear:2020, direction:'UP',   change:72,   startPrice:29,
+      news:["2020 US election drove record platform engagement and monthly active user growth","Super Follows and Spaces audio features launching, expanding creator monetization options","Twitter Blue subscription service announced, signaling shift toward recurring revenue model"] },
+    { ticker:'PTON', name:'Peloton',   baseYear:2020, direction:'DOWN', change:-76,  startPrice:27,
+      news:["COVID-era home fitness demand clearly at peak with hardware sales surging artificially","Vaccine rollout accelerating with widespread expectation of gym reopening and return to normal","Child treadmill safety recall issued, triggering regulatory scrutiny and reputational damage"] },
+    { ticker:'HOOD', name:'Robinhood', baseYear:2021, direction:'DOWN', change:-55,  startPrice:35,
+      news:["IPO priced at $38 per share but stock crashed on first day of public trading","GameStop meme stock saga triggered intense SEC investigation and Congressional hearings","Retail trading volumes and crypto transaction fees declining sharply from 2021 pandemic highs"] },
   ],
   // Round 3
   [
-    { ticker:'BRK',  name:'Berkshire Hathaway', baseYear:2021, direction:'UP',   change:4,   startPrice:460000 },
-    { ticker:'JPM',  name:'JPMorgan',    baseYear:2020, direction:'UP',   change:25,   startPrice:100  },
-    { ticker:'GS',   name:'Goldman Sachs', baseYear:2020, direction:'UP', change:45,   startPrice:210  },
-    { ticker:'V',    name:'Visa',         baseYear:2021, direction:'DOWN', change:-3,  startPrice:220  },
-    { ticker:'MA',   name:'Mastercard',   baseYear:2021, direction:'DOWN', change:-4,  startPrice:360  },
-    { ticker:'PYPL', name:'PayPal',       baseYear:2021, direction:'DOWN', change:-62, startPrice:275  },
-    { ticker:'SQ',   name:'Block (SQ)',   baseYear:2020, direction:'DOWN', change:-15, startPrice:220  },
-    { ticker:'COIN2',name:'Coinbase',     baseYear:2022, direction:'UP',   change:54,  startPrice:50   },
-    { ticker:'AFRM', name:'Affirm',       baseYear:2021, direction:'DOWN', change:-89, startPrice:145  },
-    { ticker:'SOFI', name:'SoFi',         baseYear:2021, direction:'DOWN', change:-73, startPrice:17   },
+    { ticker:'BRK',  name:'Berkshire Hathaway', baseYear:2021, direction:'UP',   change:4,   startPrice:460000,
+      news:["Buffett building large positions in energy and financial stocks ahead of rate hikes","Massive $144 billion cash reserve positioned to deploy during anticipated market dislocations","Portfolio heavily weighted toward value and commodity stocks that outperform in inflationary cycles"] },
+    { ticker:'JPM',  name:'JPMorgan',    baseYear:2020, direction:'UP',   change:25,   startPrice:100,
+      news:["Record government stimulus spending expected to boost commercial and consumer loan demand","Vaccine rollout enabling economic reopening and accelerating consumer spending and credit growth","Investment banking advisory and trading revenue elevated from COVID-driven market volatility"] },
+    { ticker:'GS',   name:'Goldman Sachs', baseYear:2020, direction:'UP', change:45,   startPrice:210,
+      news:["SPAC boom creating record IPO advisory fee pipeline for Goldman Sachs bankers","M&A transaction volumes at all-time highs as companies pursue post-pandemic consolidation","Trading revenue surging from elevated market volatility and massive corporate capital raising"] },
+    { ticker:'V',    name:'Visa',         baseYear:2021, direction:'DOWN', change:-3,  startPrice:220,
+      news:["Cross-border travel volumes recovering but inflation beginning to squeeze consumer spending","Federal Reserve rate hike cycle approaching, historically compressing high-multiple payment stocks","Crypto payment networks and BNPL alternatives quietly gaining share in e-commerce checkout"] },
+    { ticker:'MA',   name:'Mastercard',   baseYear:2021, direction:'DOWN', change:-4,  startPrice:360,
+      news:["Payment volume growth strong but valuation stretched at 40x earnings entering rate hike cycle","Rising interest rates triggering broad rotation from growth stocks toward value and cyclicals","Cryptocurrency payment rails and real-time bank transfers emerging as long-term competitive threat"] },
+    { ticker:'PYPL', name:'PayPal',       baseYear:2021, direction:'DOWN', change:-62, startPrice:275,
+      news:["Active account growth decelerated sharply, missing guidance and alarming growth investors","eBay migration to its own managed payments platform removing a key PayPal transaction source","Apple Pay, Stripe, and Shop Pay intensifying competition in online checkout and mobile payments"] },
+    { ticker:'SQ',   name:'Block (SQ)',   baseYear:2020, direction:'DOWN', change:-15, startPrice:220,
+      news:["Cash App growing virally among younger demographics through peer-to-peer payment adoption","Bitcoin investment on corporate balance sheet creating significant earnings volatility exposure","Stock trading at 10x revenue with growth expectations that required sustained hyper-growth execution"] },
+    { ticker:'COIN2',name:'Coinbase',     baseYear:2022, direction:'UP',   change:54,  startPrice:50,
+      news:["Crypto market bottomed after FTX collapse, with Bitcoin finding support around $16,000","Bitcoin halving event scheduled for April 2024 historically precedes major bull cycles","Institutional interest returning as crypto infrastructure matures and regulatory framework clarifies"] },
+    { ticker:'AFRM', name:'Affirm',       baseYear:2021, direction:'DOWN', change:-89, startPrice:145,
+      news:["Buy-now-pay-later market booming but Federal Reserve signaling steep rate hike trajectory","Rising interest rates fundamentally destroy BNPL economics by increasing cost of capital sharply","Consumer credit stress increasing with delinquency rates beginning to tick up across BNPL providers"] },
+    { ticker:'SOFI', name:'SoFi',         baseYear:2021, direction:'DOWN', change:-73, startPrice:17,
+      news:["Student loan repayment moratorium extended indefinitely, eliminating core refinancing revenue","Rising interest rates compressing net interest margins on deposits and new loan originations","Regulatory approval for national bank charter pending, creating uncertainty about business model"] },
   ],
   // Round 4
   [
-    { ticker:'MRNA', name:'Moderna',          baseYear:2021, direction:'DOWN', change:-29, startPrice:270  },
-    { ticker:'PFE',  name:'Pfizer',           baseYear:2020, direction:'UP',   change:51,  startPrice:34   },
-    { ticker:'JNJ',  name:'Johnson & Johnson',baseYear:2021, direction:'UP',   change:5,   startPrice:165  },
-    { ticker:'UNH',  name:'UnitedHealth',     baseYear:2020, direction:'UP',   change:22,  startPrice:310  },
-    { ticker:'CVS',  name:'CVS Health',       baseYear:2020, direction:'UP',   change:38,  startPrice:60   },
-    { ticker:'WBA',  name:'Walgreens',        baseYear:2020, direction:'DOWN', change:-8,  startPrice:43   },
-    { ticker:'TDOC', name:'Teladoc',          baseYear:2020, direction:'DOWN', change:-54, startPrice:85   },
-    { ticker:'ILMN', name:'Illumina',         baseYear:2021, direction:'DOWN', change:-52, startPrice:380  },
-    { ticker:'ABT',  name:'Abbott Labs',      baseYear:2020, direction:'UP',   change:25,  startPrice:86   },
-    { ticker:'ISRG', name:'Intuitive Surgical',baseYear:2020, direction:'UP',  change:34,  startPrice:550  },
+    { ticker:'MRNA', name:'Moderna',          baseYear:2021, direction:'DOWN', change:-29, startPrice:270,
+      news:["COVID vaccine revenues at peak with multiple booster campaigns generating billions quarterly","Booster demand outlook increasingly uncertain as pandemic transitions toward endemic phase","Pipeline beyond COVID vaccines thin with no near-term blockbuster revenue catalyst visible"] },
+    { ticker:'PFE',  name:'Pfizer',           baseYear:2020, direction:'UP',   change:51,  startPrice:34,
+      news:["COVID vaccine showing 95% efficacy in Phase 3 trials, leading the global race","Emergency use authorization imminent with governments worldwide pre-ordering hundreds of millions of doses","Vaccine revenues expected to become a multi-billion dollar recurring business for years ahead"] },
+    { ticker:'JNJ',  name:'Johnson & Johnson',baseYear:2021, direction:'UP',   change:5,   startPrice:165,
+      news:["Diversified business across consumer health, pharmaceuticals, and medical devices provides stability","Pipeline includes multiple late-stage oncology and immunology drugs with significant revenue potential","Dividend aristocrat with 60-year consecutive increase streak attracts income-focused institutional investors"] },
+    { ticker:'UNH',  name:'UnitedHealth',     baseYear:2020, direction:'UP',   change:22,  startPrice:310,
+      news:["COVID postponed elective procedures in 2020, temporarily reducing medical claims and costs","Managed care enrollment rising as employer health insurance demand strengthens with reopening","ACA marketplace expansion expected under new administration, significantly growing insured population"] },
+    { ticker:'CVS',  name:'CVS Health',       baseYear:2020, direction:'UP',   change:38,  startPrice:60,
+      news:["CVS designated as a primary COVID vaccine distribution hub leveraging its 10,000 pharmacy network","Aetna insurance acquisition integration generating meaningful cost synergies and cross-selling revenue","Healthcare services expansion into MinuteClinics and primary care creating new high-margin revenue streams"] },
+    { ticker:'WBA',  name:'Walgreens',        baseYear:2020, direction:'DOWN', change:-8,  startPrice:43,
+      news:["Vaccine distribution role significantly smaller than CVS, limiting pandemic upside opportunity","Drug reimbursement rate pressures from pharmacy benefit managers weighing on core dispensing margins","Store closure and footprint rationalization program expected to create near-term revenue headwinds"] },
+    { ticker:'TDOC', name:'Teladoc',          baseYear:2020, direction:'DOWN', change:-54, startPrice:85,
+      news:["Telehealth usage reached pandemic peak as lockdowns forced all medical consultations online","COVID vaccine rollout widely expected to enable rapid return to in-person doctor visits and care","Large hospital systems and Amazon Health entering telehealth market, intensifying competitive pressure"] },
+    { ticker:'ILMN', name:'Illumina',         baseYear:2021, direction:'DOWN', change:-52, startPrice:380,
+      news:["European regulators formally blocked Illumina's $8 billion acquisition of Grail cancer detection startup","Genomics market growth decelerating from COVID-era peak sequencing demand and research funding","Long-read sequencing competitors gaining market share in key clinical and research applications"] },
+    { ticker:'ABT',  name:'Abbott Labs',      baseYear:2020, direction:'UP',   change:25,  startPrice:86,
+      news:["COVID rapid antigen test revenues surging with massive US government procurement contracts signed","Medical device recovery expected as elective surgeries resume following lockdown restrictions easing","Strong diagnostic pipeline with multiple next-generation testing platforms in late-stage development"] },
+    { ticker:'ISRG', name:'Intuitive Surgical',baseYear:2020, direction:'UP',  change:34,  startPrice:550,
+      news:["Elective surgeries recovering as lockdowns ease and patient confidence in hospitals returns","da Vinci robotic surgical system installed base expanding globally with strong recurring procedure revenue","Bariatric, colorectal, and hernia procedures adopting robotic surgery at accelerating adoption rates"] },
   ],
   // Round 5
   [
-    { ticker:'XOM',  name:'ExxonMobil',      baseYear:2021, direction:'UP',   change:87,  startPrice:50   },
-    { ticker:'CVX',  name:'Chevron',         baseYear:2021, direction:'UP',   change:53,  startPrice:90   },
-    { ticker:'BP',   name:'BP',              baseYear:2020, direction:'UP',   change:16,  startPrice:24   },
-    { ticker:'SHEL', name:'Shell',           baseYear:2020, direction:'UP',   change:11,  startPrice:28   },
-    { ticker:'HAL',  name:'Halliburton',     baseYear:2021, direction:'UP',   change:61,  startPrice:18   },
-    { ticker:'TSLA2',name:'Tesla',           baseYear:2019, direction:'UP',   change:743, startPrice:65   },
-    { ticker:'GME',  name:'GameStop',        baseYear:2020, direction:'UP',   change:688, startPrice:4    },
-    { ticker:'AMC',  name:'AMC',             baseYear:2020, direction:'UP',   change:596, startPrice:2    },
-    { ticker:'LCID', name:'Lucid Motors',    baseYear:2021, direction:'DOWN', change:-82, startPrice:35   },
-    { ticker:'SPCE', name:'Virgin Galactic', baseYear:2020, direction:'DOWN', change:-46, startPrice:20   },
+    { ticker:'XOM',  name:'ExxonMobil',      baseYear:2021, direction:'UP',   change:87,  startPrice:50,
+      news:["Global oil demand recovering to pre-COVID levels with travel and industrial activity rebounding","Years of underinvestment in new production capacity creating structural supply deficit in energy markets","Russia-Ukraine geopolitical tensions escalating, threatening major disruptions to European energy supply"] },
+    { ticker:'CVX',  name:'Chevron',         baseYear:2021, direction:'UP',   change:53,  startPrice:90,
+      news:["Strong free cash flow generation from higher oil prices enabling record shareholder returns","$10 billion share buyback program announced as balance sheet reaches strongest position in decades","OPEC+ supply discipline successfully supporting crude oil prices above $80 per barrel"] },
+    { ticker:'BP',   name:'BP',              baseYear:2020, direction:'UP',   change:16,  startPrice:24,
+      news:["Oil price recovering from historic negative territory recorded in April 2020","Cost reduction program and dividend reset creating a leaner, more financially resilient business","Energy transition investments in offshore wind and hydrogen positioning for long-term strategic shift"] },
+    { ticker:'SHEL', name:'Shell',           baseYear:2020, direction:'UP',   change:11,  startPrice:28,
+      news:["LNG business benefiting from surging Asian demand and Europe's accelerating energy transition","Dividend restored after COVID-era cut, signaling management confidence in oil market recovery","Integrated energy strategy balancing legacy fossil fuels with major renewable energy investments"] },
+    { ticker:'HAL',  name:'Halliburton',     baseYear:2021, direction:'UP',   change:61,  startPrice:18,
+      news:["International drilling activity accelerating as oil majors restart projects delayed during COVID","Oilfield services pricing power returning as customers prioritize production growth over cost control","Offshore drilling market strengthening significantly with crude oil prices above $70 per barrel"] },
+    { ticker:'TSLA2',name:'Tesla',           baseYear:2019, direction:'UP',   change:743, startPrice:65,
+      news:["Shanghai Gigafactory completed on schedule, dramatically expanding global production capacity","Model 3 production ramp hitting targets for first time, proving manufacturing execution capability","S&P 500 inclusion speculation building with market capitalization approaching the $500 billion threshold"] },
+    { ticker:'GME',  name:'GameStop',        baseYear:2020, direction:'UP',   change:688, startPrice:4,
+      news:["Ryan Cohen, Chewy founder, acquired 13% stake and pushed for e-commerce transformation","WallStreetBets subreddit community coordinating massive buying campaign targeting high short-interest stocks","Short interest reached 140% of float, creating conditions for a historic short squeeze event"] },
+    { ticker:'AMC',  name:'AMC',             baseYear:2020, direction:'UP',   change:596, startPrice:2,
+      news:["AMC theaters survived 2020 pandemic shutdowns by avoiding bankruptcy through emergency financing","Meme stock retail investor community rallying around AMC as symbol of pandemic-era underdog narrative","Extremely high short interest creating significant potential for a coordinated short squeeze event"] },
+    { ticker:'LCID', name:'Lucid Motors',    baseYear:2021, direction:'DOWN', change:-82, startPrice:35,
+      news:["SPAC merger valued Lucid at $24 billion before the company had sold a single vehicle","2022 production target slashed from 20,000 to just 6,000 vehicles due to manufacturing challenges","Luxury EV market positioning promising but massive cash burn and execution risks raising red flags"] },
+    { ticker:'SPCE', name:'Virgin Galactic', baseYear:2020, direction:'DOWN', change:-46, startPrice:20,
+      news:["Richard Branson's space tourism vision compelling but repeated technical launch delays frustrating investors","FAA investigation into 2021 spaceflight deviation threatening commercial launch license renewal","Enormous ongoing cash burn with commercial operations repeatedly delayed and revenue years away"] },
   ],
 ];
 
@@ -926,6 +1011,11 @@ function loadCurrentStock() {
   const stock = ROUNDS[state.currentRound][state.currentStock];
   document.getElementById('stock-title').innerHTML =
     `<strong>${stock.name} (${stock.ticker.replace(/\d+$/,'')})</strong> &mdash; ${stock.baseYear - 1}–${stock.baseYear} Performance`;
+
+  // News bullets
+  const panel = document.getElementById('news-panel');
+  panel.innerHTML = `<div class="news-panel-title">What analysts were saying in ${stock.baseYear}</div>` +
+    stock.news.map(n => `<div class="news-bullet">${n}</div>`).join('');
 
   // Reset result overlay
   const overlay = document.getElementById('result-overlay');
